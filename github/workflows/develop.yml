@@ -1,10 +1,12 @@
-name: Main - Java 21
+name: Develop - Java 21
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - develop
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - develop
 
 jobs:
   build:
