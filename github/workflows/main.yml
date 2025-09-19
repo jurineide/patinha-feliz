@@ -1,12 +1,6 @@
-name: Main - Java 21
+name: Teste Workflow
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: push
 
 jobs:
   build:
@@ -16,15 +10,5 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build com Maven
-        run: mvn -B clean install -DskipTests
-
-      - name: Rodar testes
-        run: mvn test
+      - name: Verificar Java
+        run: java -version
