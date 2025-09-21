@@ -1,5 +1,6 @@
 package com.site.patinha_feliz.services;
 
+import com.site.patinha_feliz.dtos.AnimalResponseDTO;
 import com.site.patinha_feliz.dtos.UsuarioResponseDTO;
 import com.site.patinha_feliz.entities.Usuario;
 import com.site.patinha_feliz.repositories.UsuarioRepository;
@@ -66,5 +67,36 @@ public class UsuarioService {
             usuarioRepository.delete(usuario);
             return true;
         }).orElse(false);
+    }
+
+    public List<UsuarioResponseDTO> listarUsuariosDTO() {
+        List<Usuario> usuarios = listarUsuarios();
+        return usuarios.stream().map(this::toResponseDTO).toList();
+    }
+
+    public UsuarioResponseDTO toResponseDTO(Usuario usuario) {
+        UsuarioResponseDTO dto = new UsuarioResponseDTO();
+        dto.setId(usuario.getId());
+        dto.setNome(usuario.getNome());
+        dto.setEmail(usuario.getEmail());
+        dto.setBairro(usuario.getBairro());
+        dto.setCidade(usuario.getCidade());
+        dto.setEstado(usuario.getEstado());
+        dto.setPerfil(usuario.getPerfil());
+        if (usuario.getAnimais() != null) {
+            dto.setAnimais(usuario.getAnimais().stream().map(animal -> {
+                AnimalResponseDTO animalDTO = new AnimalResponseDTO();
+                animalDTO.setId(animal.getId());
+                animalDTO.setNome(animal.getNome());
+                animalDTO.setSexo(animal.getSexo());
+                animalDTO.setRaca(animal.getRaca());
+                animalDTO.setPorte(animal.getPorte());
+                animalDTO.setIdade(animal.getIdade());
+                animalDTO.setCastracao(animal.getCastracao());
+                animalDTO.setVacina(animal.getVacina());
+                return animalDTO;
+            }).toList());
+        }
+        return dto;
     }
 }
