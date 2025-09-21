@@ -33,10 +33,11 @@ public class Animal {
     @Column(nullable = false)
     private String vacina;
 
+    @OneToMany(mappedBy = "animal", cascade = CascadeType.ALL)
+    private List<FotoAnimal> fotos;
+
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "animal", cascade = CascadeType.ALL)
-    private List<Foto> fotos;
 }
