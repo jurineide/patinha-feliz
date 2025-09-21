@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class FotoDTO {
 
+    @JsonProperty("url_s3")
+    private String urlS3;
     @JsonProperty("url")
     private String url;
     @JsonProperty("descricao")
