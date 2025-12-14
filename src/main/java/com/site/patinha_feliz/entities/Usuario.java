@@ -21,9 +21,6 @@ public class Usuario {
     private  String email;
 
     @Column( nullable = false)
-    private  String senha;
-
-    @Column( nullable = false)
     private String bairro;
 
     @Column( nullable = false)

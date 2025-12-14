@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/animal")
+@RequestMapping("/animais")
 public class AnimalController {
 
     @Autowired
@@ -34,15 +34,18 @@ public class AnimalController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<Animal>> buscarAnimal() {
-        var response = animalService.listarAnimals();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<AnimalGetResponseDTO>> buscarAnimal() {
+        var animals = animalService.listarAnimals();
+        // Converter para DTOs
+        List<AnimalGetResponseDTO> dtos = animals.stream().map(animalService::toGetResponseDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Animal> alterarDadosAnimal(@PathVariable Long id, @RequestBody Animal animal) {
-        var response = animalService.atualizarAnimal(id, animal);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AnimalGetResponseDTO> alterarDadosAnimal(@PathVariable Long id, @RequestBody Animal animal) {
+        var updated = animalService.atualizarAnimal(id, animal);
+        var dto = animalService.toGetResponseDTO(updated);
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("/{id}")

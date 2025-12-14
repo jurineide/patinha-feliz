@@ -32,7 +32,7 @@ class UsuarioServiceTest {
         usuario.setId(1L);
         usuario.setNome("Maria");
         usuario.setEmail("maria@email.com");
-        usuario.setSenha("123456");
+        //usuario.setSenha("123456");
         usuario.setBairro("Centro");
         usuario.setCidade("São Paulo");
         usuario.setEstado("SP");

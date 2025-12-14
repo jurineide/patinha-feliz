@@ -35,8 +35,8 @@ public class UsuarioController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<Usuario>> buscarUsuarios() {
-        var response = usuarioService.listarUsuarios();
+    public ResponseEntity<List<UsuarioResponseDTO>> buscarUsuarios() {
+        var response = usuarioService.listarUsuariosDTO();
         return ResponseEntity.ok(response);
     }
 
