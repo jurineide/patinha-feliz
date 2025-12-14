@@ -24,23 +24,20 @@ public class AnimalService {
     UsuarioRepository usuarioRepository;
 
 
-    // Criar usuário
     public AnimalResponseDTO salvarAnimal(AnimalDTO animalDTO) {
         ModelMapper modelMapper = new ModelMapper();
         Animal animal = modelMapper.map(animalDTO, Animal.class);
         animal.setId(null);
 
-        // Associar o usuário pelo id
         if (animalDTO.getUsuarioId() != null) {
             animal.setUsuario(usuarioRepository.findById(animalDTO.getUsuarioId()).orElse(null));
         }
 
-        // Mapeamento manual das fotos
         if (animalDTO.getFotos() != null && !animalDTO.getFotos().isEmpty()) {
             List<FotoAnimal> fotos = animalDTO.getFotos().stream().map(fotoDTO -> {
                 FotoAnimal foto = new FotoAnimal();
-                foto.setUrlS3(fotoDTO.getUrlS3()); // Usa o campo correto do DTO
-                foto.setAnimal(animal); // Setando referência ao animal
+                foto.setUrlS3(fotoDTO.getUrlS3());
+                foto.setAnimal(animal);
                 return foto;
             }).toList();
             animal.setFotos(fotos);
@@ -51,12 +48,12 @@ public class AnimalService {
         return response;
     }
 
-    // Listar todos
+
     public List<Animal> listarAnimals() {
         return animalRepository.findAll();
     }
 
-    // Buscar por ID
+
     public AnimalGetResponseDTO buscarPorId(Long id) {
         try {
             Optional<Animal> optionalAnimal = animalRepository.findById(id);
@@ -83,7 +80,7 @@ public class AnimalService {
         }
     }
 
-    // Atualizar
+
     public Animal atualizarAnimal(Long id, Animal dadosAtualizados) {
         return animalRepository.findById(id).map(animal -> {
             animal.setNome(dadosAtualizados.getNome());
@@ -93,7 +90,7 @@ public class AnimalService {
             animal.setIdade(dadosAtualizados.getIdade());
             animal.setCastracao(dadosAtualizados.getCastracao());
             animal.setVacina(dadosAtualizados.getVacina());
-            // Associar usuário pelo id se fornecido
+
             if (dadosAtualizados.getUsuario() != null && dadosAtualizados.getUsuario().getId() != null) {
                 animal.setUsuario(usuarioRepository.findById(dadosAtualizados.getUsuario().getId()).orElse(null));
             }
@@ -102,7 +99,7 @@ public class AnimalService {
         }).get();
     }
 
-    // Deletar
+
     public boolean deletarAnimal(Long id) {
         return animalRepository.findById(id).map(animal -> {
             animalRepository.delete(animal);
@@ -126,4 +123,3 @@ public class AnimalService {
     }
 }
 
-//TODO ver por que não está salvando as fotos no

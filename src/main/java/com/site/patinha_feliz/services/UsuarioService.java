@@ -20,20 +20,17 @@ public class UsuarioService {
     @Autowired
    UsuarioRepository usuarioRepository;
 
-
-    // Criar usuário
     public UsuarioResponseDTO salvarUsuario(Usuario usuario) {
         UsuarioResponseDTO responseDTO = new UsuarioResponseDTO();
         responseDTO.setId(usuarioRepository.save(usuario).getId());
         return responseDTO;
     }
 
-    // Listar todos
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
 
-    // Buscar por ID
+
     public Usuario buscarPorId(Long id) {
         try {
             Optional<Usuario> optionalUsuario = usuarioRepository.findById(id);
@@ -48,7 +45,6 @@ public class UsuarioService {
         }
     }
 
-    // Atualizar
     public Usuario atualizarUsuario(Long id, Usuario dadosAtualizados) {
         return usuarioRepository.findById(id).map(usuario -> {
             usuario.setNome(dadosAtualizados.getNome());
@@ -61,7 +57,7 @@ public class UsuarioService {
         }).get();
     }
 
-    // Deletar
+
     public boolean deletarUsuario(Long id) {
         return usuarioRepository.findById(id).map(usuario -> {
             usuarioRepository.delete(usuario);
