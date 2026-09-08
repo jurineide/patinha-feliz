@@ -17,11 +17,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build com Maven
-        run: mvn -B clean install
-
-      - name: Rodar testes
-        run: mvn test
+      - name: Build e testes com Maven
+        run: mvn -B clean verify
 
       - name: Publicar JAR como artefato
         if: success() # só faz upload se build + testes passarem

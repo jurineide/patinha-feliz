@@ -1,5 +1,6 @@
 package com.site.patinha_feliz.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ public class Usuario {
     @Column(unique = true, nullable = false)
     private  String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column( nullable = false)
     private  String senha;
 

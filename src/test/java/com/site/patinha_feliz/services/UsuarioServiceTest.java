@@ -1,59 +1,99 @@
 package com.site.patinha_feliz.services;
 
+import com.site.patinha_feliz.dtos.UsuarioRequestDTO;
 import com.site.patinha_feliz.dtos.UsuarioResponseDTO;
 import com.site.patinha_feliz.entities.Usuario;
+import com.site.patinha_feliz.exceptions.RecursoNaoEncontradoException;
+import com.site.patinha_feliz.exceptions.RegraDeNegocioException;
 import com.site.patinha_feliz.repositories.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
 
-    @InjectMocks
-    private UsuarioService usuarioService;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
+    private UsuarioService usuarioService;
     private Usuario usuario;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, new ModelMapper());
+
         usuario = new Usuario();
         usuario.setId(1L);
         usuario.setNome("Maria");
         usuario.setEmail("maria@email.com");
-        usuario.setSenha("123456");
+        usuario.setSenha("hash-existente");
         usuario.setBairro("Centro");
         usuario.setCidade("São Paulo");
         usuario.setEstado("SP");
         usuario.setPerfil("ADMIN");
     }
 
+    private UsuarioRequestDTO novaRequisicao() {
+        UsuarioRequestDTO dto = new UsuarioRequestDTO();
+        dto.setNome("Maria");
+        dto.setEmail("maria@email.com");
+        dto.setSenha("segredo123");
+        dto.setBairro("Centro");
+        dto.setCidade("São Paulo");
+        dto.setEstado("SP");
+        dto.setPerfil("ADMIN");
+        return dto;
+    }
+
     @Test
-    void deveSalvarUsuario() {
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+    void deveSalvarUsuarioComSenhaCriptografada() {
+        when(usuarioRepository.existsByEmail("maria@email.com")).thenReturn(false);
+        when(passwordEncoder.encode("segredo123")).thenReturn("hash-gerado");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario u = inv.getArgument(0);
+            u.setId(1L);
+            return u;
+        });
 
-        UsuarioResponseDTO dto = usuarioService.salvarUsuario(usuario);
+        UsuarioResponseDTO dto = usuarioService.salvarUsuario(novaRequisicao());
 
-        assertNotNull(dto);
         assertEquals(1L, dto.getId());
+        assertEquals("maria@email.com", dto.getEmail());
+
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        assertEquals("hash-gerado", captor.getValue().getSenha());
+    }
+
+    @Test
+    void deveRejeitarEmailDuplicado() {
+        when(usuarioRepository.existsByEmail("maria@email.com")).thenReturn(true);
+
+        assertThrows(RegraDeNegocioException.class, () -> usuarioService.salvarUsuario(novaRequisicao()));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
     void deveListarUsuarios() {
         when(usuarioRepository.findAll()).thenReturn(List.of(usuario));
 
-        List<Usuario> usuarios = usuarioService.listarUsuarios();
+        List<UsuarioResponseDTO> usuarios = usuarioService.listarUsuarios();
 
         assertEquals(1, usuarios.size());
         assertEquals("Maria", usuarios.get(0).getNome());
@@ -63,26 +103,29 @@ class UsuarioServiceTest {
     void deveBuscarPorId() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
-        Usuario result = usuarioService.buscarPorId(1L);
+        UsuarioResponseDTO result = usuarioService.buscarPorId(1L);
 
-        assertNotNull(result);
         assertEquals("Maria", result.getNome());
+    }
+
+    @Test
+    void deveLancarQuandoUsuarioNaoExiste() {
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> usuarioService.buscarPorId(99L));
     }
 
     @Test
     void deveAtualizarUsuario() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode(any())).thenReturn("novo-hash");
 
-        Usuario atualizado = new Usuario();
+        UsuarioRequestDTO atualizado = novaRequisicao();
         atualizado.setNome("Maria Silva");
-        atualizado.setEmail("nova@email.com");
-        atualizado.setBairro("Novo Bairro");
-        atualizado.setCidade("Rio de Janeiro");
         atualizado.setEstado("RJ");
-        atualizado.setPerfil("USER");
 
-        Usuario result = usuarioService.atualizarUsuario(1L, atualizado);
+        UsuarioResponseDTO result = usuarioService.atualizarUsuario(1L, atualizado);
 
         assertEquals("Maria Silva", result.getNome());
         assertEquals("RJ", result.getEstado());
@@ -92,9 +135,8 @@ class UsuarioServiceTest {
     void deveDeletarUsuario() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
-        boolean result = usuarioService.deletarUsuario(1L);
+        usuarioService.deletarUsuario(1L);
 
-        assertTrue(result);
         verify(usuarioRepository, times(1)).delete(usuario);
     }
 }

@@ -1,8 +1,5 @@
 package com.site.patinha_feliz.dtos;
 
-import com.site.patinha_feliz.entities.Foto;
-import com.site.patinha_feliz.entities.Usuario;
-import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.List;
@@ -28,6 +25,6 @@ public class AnimalGetResponseDTO {
 
     private Long idUsuario;
 
-    private List<Foto> fotos;
+    private List<FotoResponseDTO> fotos;
 
 }

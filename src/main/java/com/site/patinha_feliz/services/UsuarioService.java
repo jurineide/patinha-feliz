@@ -1,70 +1,82 @@
 package com.site.patinha_feliz.services;
 
+import com.site.patinha_feliz.dtos.UsuarioRequestDTO;
 import com.site.patinha_feliz.dtos.UsuarioResponseDTO;
 import com.site.patinha_feliz.entities.Usuario;
+import com.site.patinha_feliz.exceptions.RecursoNaoEncontradoException;
+import com.site.patinha_feliz.exceptions.RegraDeNegocioException;
 import com.site.patinha_feliz.repositories.UsuarioRepository;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
-@Getter
-@Setter
 @Service
 public class UsuarioService {
 
-    @Autowired
-   UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
 
-
-    // Criar usuário
-    public UsuarioResponseDTO salvarUsuario(Usuario usuario) {
-        UsuarioResponseDTO responseDTO = new UsuarioResponseDTO();
-        responseDTO.setId(usuarioRepository.save(usuario).getId());
-        return responseDTO;
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          PasswordEncoder passwordEncoder,
+                          ModelMapper modelMapper) {
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.modelMapper = modelMapper;
     }
 
-    // Listar todos
-    public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll();
-    }
-
-    // Buscar por ID
-    public Usuario buscarPorId(Long id) {
-        try {
-            Optional<Usuario> optionalUsuario = usuarioRepository.findById(id);
-
-            if (optionalUsuario.isPresent()) {
-                return optionalUsuario.get();
-            } else {
-                throw new RuntimeException("Usuário com ID " + id + " não encontrado.");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar usuário: " + e.getMessage(), e);
+    @Transactional
+    public UsuarioResponseDTO salvarUsuario(UsuarioRequestDTO dados) {
+        if (usuarioRepository.existsByEmail(dados.getEmail())) {
+            throw new RegraDeNegocioException("Ja existe um usuario com o email " + dados.getEmail() + ".");
         }
+        Usuario usuario = modelMapper.map(dados, Usuario.class);
+        usuario.setId(null);
+        usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
+        return toResponse(usuarioRepository.save(usuario));
     }
 
-    // Atualizar
-    public Usuario atualizarUsuario(Long id, Usuario dadosAtualizados) {
-        return usuarioRepository.findById(id).map(usuario -> {
-            usuario.setNome(dadosAtualizados.getNome());
-            usuario.setEmail(dadosAtualizados.getEmail());
-            usuario.setBairro(dadosAtualizados.getBairro());
-            usuario.setCidade(dadosAtualizados.getCidade());
-            usuario.setEstado(dadosAtualizados.getEstado());
-            usuario.setPerfil(dadosAtualizados.getPerfil());
-            return usuarioRepository.save(usuario);
-        }).get();
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> listarUsuarios() {
+        return usuarioRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    // Deletar
-    public boolean deletarUsuario(Long id) {
-        return usuarioRepository.findById(id).map(usuario -> {
-            usuarioRepository.delete(usuario);
-            return true;
-        }).orElse(false);
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO buscarPorId(Long id) {
+        return toResponse(buscarEntidade(id));
+    }
+
+    @Transactional
+    public UsuarioResponseDTO atualizarUsuario(Long id, UsuarioRequestDTO dados) {
+        Usuario usuario = buscarEntidade(id);
+        usuario.setNome(dados.getNome());
+        usuario.setEmail(dados.getEmail());
+        usuario.setBairro(dados.getBairro());
+        usuario.setCidade(dados.getCidade());
+        usuario.setEstado(dados.getEstado());
+        usuario.setPerfil(dados.getPerfil());
+        if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
+            usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
+        }
+        return toResponse(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public void deletarUsuario(Long id) {
+        usuarioRepository.delete(buscarEntidade(id));
+    }
+
+    private Usuario buscarEntidade(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario", id));
+    }
+
+    private UsuarioResponseDTO toResponse(Usuario usuario) {
+        return modelMapper.map(usuario, UsuarioResponseDTO.class);
     }
 }

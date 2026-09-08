@@ -1,11 +1,9 @@
 package com.site.patinha_feliz.controllers;
 
-
+import com.site.patinha_feliz.dtos.UsuarioRequestDTO;
 import com.site.patinha_feliz.dtos.UsuarioResponseDTO;
-import com.site.patinha_feliz.entities.Usuario;
 import com.site.patinha_feliz.services.UsuarioService;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,39 +14,38 @@ import java.util.List;
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
-    @Autowired
-    UsuarioService usuarioService;
+    private final UsuarioService usuarioService;
 
-    // Criar usuário
-    @PostMapping ()
-    public ResponseEntity<UsuarioResponseDTO> criarUsuario(@RequestBody Usuario usuario) {
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
+
+    @PostMapping
+    public ResponseEntity<UsuarioResponseDTO> criarUsuario(@Valid @RequestBody UsuarioRequestDTO usuario) {
         var response = usuarioService.salvarUsuario(usuario);
         URI location = URI.create("/usuarios/" + response.getId());
         return ResponseEntity.created(location).body(response);
-
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> buscarUsuarioPoID(@PathVariable Long id){
-        var response = usuarioService.buscarPorId(id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UsuarioResponseDTO> buscarUsuarioPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.buscarPorId(id));
     }
 
-    @GetMapping()
-    public ResponseEntity<List<Usuario>> buscarUsuarios() {
-        var response = usuarioService.listarUsuarios();
-        return ResponseEntity.ok(response);
+    @GetMapping
+    public ResponseEntity<List<UsuarioResponseDTO>> buscarUsuarios() {
+        return ResponseEntity.ok(usuarioService.listarUsuarios());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> alterarDadosUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
-        var response = usuarioService.atualizarUsuario(id, usuario);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UsuarioResponseDTO> alterarDadosUsuario(@PathVariable Long id,
+                                                                 @Valid @RequestBody UsuarioRequestDTO usuario) {
+        return ResponseEntity.ok(usuarioService.atualizarUsuario(id, usuario));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Boolean> deletarUsuario(@PathVariable Long id){
-        var response = usuarioService.deletarUsuario(id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
+        usuarioService.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
     }
 }
